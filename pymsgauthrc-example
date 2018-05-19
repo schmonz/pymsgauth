@@ -1,0 +1,41 @@
+[default]
+
+# Your email address, for replying to qsecretary confirmation notices
+confirmation_address = 'myemailaddress@example.net'
+
+#
+# Secret
+#
+# For additional security, add some entropy to the hashing algorithm.  This
+# helps to prevent pymsgauth from confirming qsecretary notices from forged
+# messages.  Define it as a string, like this:
+#
+#	secret = "my secret"
+#
+# It should contain a secret of sufficient length and entropy to prevent message 
+# forgeries.  Consider using 128 bytes from /dev/random or /dev/urandom and 
+# converted to hexadecimal format as your secret; this will create a 1024-bit 
+# secret and make forgeries nearly impossible.
+#
+# An easy way to generate the necessary string from a shell with GNU-type
+# tools is:
+#
+#  dd if=/dev/random bs=128 count=1 2>/dev/null | od -An -t x -w128 | tr -d ': '
+#
+secret = ''
+
+# What is the "real" mail delivery program?  Any arguments passed to the
+# pymsgauth-mail wrapper will be appended to this.  The following is the
+# default, and works well with mutt on a qmail system.
+#
+#   mail_prog = ['/var/qmail/bin/qmail-inject', '-A']
+
+# Configure which messages pymsgauth will add a token to; a message which
+# includes any of the configured recipients will be sent with a token.
+# List once for each recipient.  The following three recipients are the
+# default.
+#
+#   token_recipient = qmail@list.cr.yp.to
+#   token_recipient = log@list.cr.yp.to
+#   token_recipient = dns@list.cr.yp.to
+#   token_recipient = ezmlm@list.cr.yp.to

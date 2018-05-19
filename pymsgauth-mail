@@ -1,0 +1,8 @@
+#!/usr/bin/python
+
+from pymsgauth import *
+
+import sys
+
+args = sys.argv[1:]
+sendmail_wrapper (args)

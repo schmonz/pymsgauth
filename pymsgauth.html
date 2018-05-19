@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" 
+	"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=iso-8859-1" />
+	<title>Charles Cazabon's pymsgauth</title>
+    <meta name="author" content="Charles Cazabon" />
+    <meta name="description" content="A program for securely and automatically dealing with confirmation messages on qsecretary-protected mailing lists." />
+    <meta name="keywords" content="qsecretary,pymsgauth,qmail,mailing list,secure,automatic,confirmation,reply" />
+	<style type="text/css" media="all">@import "pymsgauth.css";</style>
+</head>
+<body id="top">
+	<h1 id="title">pymsgauth v. 2.1.0</h1>
+	<h2 id="subtitle"><em>A toolkit for automatically and securely dealing with qsecretary confirmation notices</em></h2>
+	<h3 id="author">Copyright &copy; 2003 Charles Cazabon.</h3>
+	<h3 id="version">Licensed under the <a href="./COPYING">GNU General Public License version 2</a>.</h3>
+
+	<h2 id="using">Using pymsgauth</h2>
+	<p>To use pymsgauth effectively, do the following:</p>
+
+	<h3 id="installing">Installing pymsgauth</h3>
+	<ul>
+		<li>
+		    <a href="./">Download the latest version of <span class="sample">pymsgauth</span></a>.
+		</li>
+		<li>
+			Unpack the tarball.
+		</li>
+		<li>
+			Create and populate the directories.
+			<pre class="sample">
+mkdir -m 755 /usr/lib/pymsgauth and /usr/doc/pymsgauth
+install -m 755 pymsgauth.py ConfParser.py pymsgauth-mail pymsgauth-confirm pymsgauth-clean /usr/lib/pymsgauth
+install -m 644 pymsgauth.html pymsgauth.txt pymsgauthrc-example CHANGELOG BUGS COPYING /usr/doc/pymsgauth
+			</pre>
+		</li>
+		<li>
+			Symlink the commands into <span class="sample">/usr/bin</span>
+			<pre class="sample">
+cd /usr/bin
+ln -s ../lib/pymsgauth/pymsgauth-* ./
+			</pre>
+		</li>
+	</ul>
+
+	<h3 id="configuring">Configuring pymsgauth</h3>
+	<ul>
+		<li>
+		    Create a local configuration/data directory.  The default is <span 
+		    class="sample">~/.pymsgauth</span>, but can be overridden in the 
+		    environment variable <span class="sample">PYMSGAUTH_DIR</span>.
+			<pre class="sample">
+mkdir m 700 ~/.pymsgauth
+			</pre>
+		</li>
+		<li>
+			Create a configuration file <span class="sample">pymsgauthrc</span> 
+			in the above directory.  Examine the provided <span 
+			class="sample">pymsgauthrc-example</span> file for details.
+		</li>
+	</ul>
+
+	<h3 id="qmail">Configuring qmail delivery</h3>
+	<ul>
+		<li>
+		    Configure qmail to process messages from <span 
+		    class="sample">qsecretary</span>-protected mailing lists. For 
+		    instance, if mail from the <span class="sample">qmail</span> mailing 
+		    list is controlled by <span class="sample">~/.qmail-list</span>, 
+		    edit that file.  Include a delivery to the <span 
+		    class="sample">pymsgauth-confirm</span> command before your Maildir 
+		    or mbox delivery line, as follows:
+			<pre class="sample">
+|/usr/bin/pymsgauth-confirm
+./Mail/list/
+			</pre>
+		</li>
+	</ul>
+
+	<h3 id="mua">Configuring MUAs</h3>
+	<ul>
+		<li>
+		    Configure your MUA to use <span class="sample">pymsgauth-mail</span> 
+		    as its sendmail interface.  In <span class="sample">mutt</span>, 
+		    this means setting <span class="sample">sendmail</span> to the path 
+		    to <span class="sample">pymsgauth-mail</span> in your <span 
+		    class="sample">.muttrc</span> file.
+		</li>
+	</ul>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+#!/usr/bin/python
+
+from pymsgauth import *
+
+clean_old_tokens ()
+

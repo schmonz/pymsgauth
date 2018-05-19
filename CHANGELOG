@@ -1,0 +1,17 @@
+Version 2.1.0
+14 December 2003
+
+  -make change to the way the mail command is passed to the popen2.Popen3()
+  constructor to eliminate a potential security problem exploitable only by
+  djb.  Much thanks to Paul Jarc for noticing and reporting this.
+  -the above change means that the 'mail_prog' and 'extra_mail_args' configuration
+  values must now be lists instead of a simple string; if you've customized
+  these values in your ~/.pymsgauth/pymsgauthrc file, check that they use the
+  new format.
+
+Version 2.0.0
+19 March 2003
+
+  -fix under later BSDs.  Thanks to Karsten W. Rohrbach for a patch changing
+  the popen2 command handling.
+

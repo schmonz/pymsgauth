@@ -1,0 +1,59 @@
+                               pymsgauth v. 2.1.0
+
+A toolkit for automatically and securely dealing with qsecretary confirmation
+notices
+
+  Copyright (c) 2003 Charles Cazabon.
+
+  Licensed under the GNU General Public License version 2.
+
+Using pymsgauth
+
+   To use pymsgauth effectively, do the following:
+
+  Installing pymsgauth
+
+     * Download the latest version of pymsgauth.
+     * Unpack the tarball.
+     * Create and populate the directories.
+
+ mkdir -m 755 /usr/lib/pymsgauth and /usr/doc/pymsgauth
+ install -m 755 pymsgauth.py ConfParser.py pymsgauth-mail pymsgauth-confirm pymsgauth-clean /usr/lib/pymsgauth
+ install -m 644 pymsgauth.html pymsgauth.txt pymsgauthrc-example CHANGELOG BUGS COPYING /usr/doc/pymsgauth
+                        
+
+     * Symlink the commands into /usr/bin
+
+ cd /usr/bin
+ ln -s ../lib/pymsgauth/pymsgauth-* ./
+                        
+
+  Configuring pymsgauth
+
+     * Create a local configuration/data directory. The default is
+       ~/.pymsgauth, but can be overridden in the environment variable
+       PYMSGAUTH_DIR.
+
+ mkdir m 700 ~/.pymsgauth
+                        
+
+     * Create a configuration file pymsgauthrc in the above directory.
+       Examine the provided pymsgauthrc-example file for details.
+
+  Configuring qmail delivery
+
+     * Configure qmail to process messages from qsecretary-protected mailing
+       lists. For instance, if mail from the qmail mailing list is controlled
+       by ~/.qmail-list, edit that file. Include a delivery to the
+       pymsgauth-confirm command before your Maildir or mbox delivery line,
+       as follows:
+
+ |/usr/bin/pymsgauth-confirm
+ ./Mail/list/
+                        
+
+  Configuring MUAs
+
+     * Configure your MUA to use pymsgauth-mail as its sendmail interface. In
+       mutt, this means setting sendmail to the path to pymsgauth-mail in
+       your .muttrc file.
