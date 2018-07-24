@@ -52,7 +52,7 @@ import string
 import UserDict
 import sys
 import shlex
-import cStringIO
+import io
 from types import *
 
 
@@ -132,7 +132,7 @@ class SmartDict (UserDict.UserDict):
         '''Constructor.
         '''
         UserDict.UserDict.__init__ (self, {})
-        for (key, value) in initialdata.items ():
+        for (key, value) in list(initialdata.items ()):
             self.__setitem (key, value)
 
     #######################################
@@ -144,8 +144,8 @@ class SmartDict (UserDict.UserDict):
             if len (value) == 1:
                 return value[0]
             return value
-        except KeyError, txt:
-            raise KeyError, txt
+        except KeyError as txt:
+            raise KeyError(txt)
 
     #######################################
     def __setitem__ (self, key, value):
@@ -176,11 +176,11 @@ class ConfParser:
         self.__defaults = SmartDict ()
 
         try:
-            for key in defaults.keys ():
+            for key in list(defaults.keys ()):
                 self.__defaults[key] = defaults[key]
 
         except AttributeError:
-            raise ParsingError, 'defaults not a dictionary (%s)' % defaults
+            raise ParsingError('defaults not a dictionary (%s)' % defaults)
 
     #######################################
     def read (self, filelist):
@@ -196,8 +196,8 @@ class ConfParser:
                 self.__rawdata = self.__rawdata + f.readlines ()
                 f.close ()
     
-        except IOError, txt:
-            raise ParsingError, 'error reading configuration file (%s)' % txt
+        except IOError as txt:
+            raise ParsingError('error reading configuration file (%s)' % txt)
 
         self.__parse ()
         return self
@@ -207,7 +207,7 @@ class ConfParser:
         '''Parse the read-in configuration file.
         '''
         config = string.join (self.__rawdata, '\n')
-        f = cStringIO.StringIO (config)
+        f = io.StringIO (config)
         lex = shlex.shlex (f)
         lex.wordchars = lex.wordchars + '|/.,$^\\():;@-+?<>!%&*`~'
         section_name = ''
@@ -221,38 +221,36 @@ class ConfParser:
 
             if not (section_name):
                 if token != '[':
-                    raise ParsingError, 'expected section start, got %s' % token
+                    raise ParsingError('expected section start, got %s' % token)
                 section_name = ''
                 while 1:
                     token = lex.get_token ()
                     if token == ']':
                         break
                     if token == '':
-                        raise ParsingError, 'expected section end, hit EOF'
+                        raise ParsingError('expected section end, hit EOF')
                     if section_name:
                         section_name = section_name + ' '
                     section_name = section_name + token
                 if not section_name:
-                    raise ParsingError, 'expected section name, got nothing'
+                    raise ParsingError('expected section name, got nothing')
 
                 section = SmartDict ()
                 # Collapse case on section names
                 section_name = string.lower (section_name)
                 if section_name in self.__sectionlist:
-                    raise DuplicateSectionError, \
-                        'duplicate section (%s)' % section_name
+                    raise DuplicateSectionError('duplicate section (%s)' % section_name)
                 section['__name__'] = section_name
                 continue
 
             if token == '=':
-                raise ParsingError, 'expected option name, got ='
+                raise ParsingError('expected option name, got =')
 
             if token == '[':
                 # Start new section
                 lex.push_token (token)
                 if section_name in self.__sectionlist:
-                    raise DuplicateSectionError, \
-                        'duplicate section (%s)' % section_name
+                    raise DuplicateSectionError('duplicate section (%s)' % section_name)
                 if section['__name__'] == 'default':
                     self.__defaults.update (section)
                 self.__sectionlist.append (section_name)
@@ -264,17 +262,17 @@ class ConfParser:
                 option_name = token
                 token = lex.get_token ()
                 if token != '=':
-                    raise ParsingError, 'Expected =, got %s' % token
+                    raise ParsingError('Expected =, got %s' % token)
 
                 token = lex.get_token ()
                 if token in ('[', '='):
-                    raise ParsingError, 'expected option value, got %s' % token
+                    raise ParsingError('expected option value, got %s' % token)
                 option_value = token
 
                 if option_value[0] in ('"', "'") and option_value[0] == option_value[-1]:
                     option_value = option_value[1:-1]
                                   
-                if section.has_key (option_name):
+                if option_name in section:
                     if type (section[option_name]) == ListType:
                         section[option_name].append (option_value)
                     else:
@@ -287,15 +285,14 @@ class ConfParser:
         # Done parsing        
         if section_name:
             if section_name in self.__sectionlist:
-                raise DuplicateSectionError, \
-                    'duplicate section (%s)' % section_name
+                raise DuplicateSectionError('duplicate section (%s)' % section_name)
             if section['__name__'] == 'default':
                 self.__defaults.update (section)
             self.__sectionlist.append (section_name)
             self.__sections.append (section.copy ())
         
         if not self.__sectionlist:
-            raise MissingSectionHeaderError, 'no section headers in file'
+            raise MissingSectionHeaderError('no section headers in file')
 
     #######################################
     def defaults (self):
@@ -336,9 +333,9 @@ class ConfParser:
             s = self.__sectionlist.index (string.lower (section))
 
         except ValueError:
-            raise NoSectionError, 'missing section:  "%s"' % section
+            raise NoSectionError('missing section:  "%s"' % section)
 
-        return self.__sections[s].keys ()
+        return list(self.__sections[s].keys ())
 
     #######################################
     def get (self, section, option, raw=0, _vars={}):
@@ -352,16 +349,16 @@ class ConfParser:
             s = self.__sectionlist.index (string.lower (section))
             options = self.__sections[s]
         except ValueError:
-            raise NoSectionError, 'missing section (%s)' % section
+            raise NoSectionError('missing section (%s)' % section)
 
         expand = self.__defaults.copy ()
         expand.update (_vars)
         
-        if not options.has_key (option):
-            if expand.has_key (option):
+        if option not in options:
+            if option in expand:
                 return expand[option]
-            raise NoOptionError, 'section [%s] missing option (%s)' \
-                % (section, option)
+            raise NoOptionError('section [%s] missing option (%s)' \
+                % (section, option))
 
         rawval = options[option]
         
@@ -381,12 +378,12 @@ class ConfParser:
             if len (value) == 1:
                 return value[0]
             return value                
-        except KeyError, txt:
-            raise NoOptionError, 'section [%s] missing option (%s)' \
-                % (section, option)
-        except TypeError, txt:
-            raise InterpolationError, 'invalid conversion or specification' \
-                ' for option %s (%s (%s))' % (option, rawval, txt)
+        except KeyError as txt:
+            raise NoOptionError('section [%s] missing option (%s)' \
+                % (section, option))
+        except TypeError as txt:
+            raise InterpolationError('invalid conversion or specification' \
+                ' for option %s (%s (%s))' % (option, rawval, txt))
 
     #######################################
     def getint (self, section, option):
@@ -397,8 +394,8 @@ class ConfParser:
         try:
             return int (val)
         except ValueError:
-            raise InterpolationError, 'option %s not an integer (%s)' \
-                % (option, val)
+            raise InterpolationError('option %s not an integer (%s)' \
+                % (option, val))
 
     #######################################
     def getfloat (self, section, option):
@@ -409,8 +406,8 @@ class ConfParser:
         try:
             return float (val)
         except ValueError:
-            raise InterpolationError, 'option %s not a float (%s)' \
-                % (option, val)
+            raise InterpolationError('option %s not a float (%s)' \
+                % (option, val))
 
     #######################################
     def getboolean (self, section, option):

@@ -31,7 +31,7 @@ import sys
 import os
 import string
 import rfc822
-import cStringIO
+import io
 import time
 import types
 import ConfParser
@@ -49,7 +49,7 @@ loglevels = {
     'ERROR' : 5,
     'FATAL' : 6,
 }
-(TRACE, DEBUG, INFO, WARN, ERROR, FATAL) = range (1, 7)
+(TRACE, DEBUG, INFO, WARN, ERROR, FATAL) = list(range(1, 7))
 
 # Build-in default values
 defaults = {
@@ -116,7 +116,7 @@ FILENAME, LINENO, FUNCNAME = 0, 1, 2        #SOURCELINE = 3 ; not used
 logfd = None
 
 #############################
-class pymsgauthError (StandardError):
+class pymsgauthError (Exception):
     pass
 
 #############################
@@ -147,9 +147,9 @@ def log (level=INFO, msg=''):
         if not logfd:
             try:
                 logfd = open (os.path.expanduser (config['log_file']), 'a')
-            except IOError, txt:
-                raise ConfigurationError, 'failed to open log file %s (%s)' \
-                    % (config['log_file'], txt)
+            except IOError as txt:
+                raise ConfigurationError('failed to open log file %s (%s)' \
+                    % (config['log_file'], txt))
         t = time.localtime (time.time ())
         logfd.write ('%s %s' % (time.strftime ('%d %b %Y %H:%M:%S', t), s))
         logfd.flush ()
@@ -182,18 +182,17 @@ def read_config ():
                 try:
                     value = loglevels[value]
                 except KeyError:
-                    raise ConfigurationError, \
-                        '"%s" not a valid logging level' % value
+                    raise ConfigurationError('"%s" not a valid logging level' % value)
             config[option] = value
             if option == 'secret':
                 log (TRACE, 'option secret == %s...' % value[:20])
             else:
                 log (TRACE, 'option %s == %s...' % (option, config[option]))
-    except (ConfigurationError, ConfParser.ConfParserException), txt:
+    except (ConfigurationError, ConfParser.ConfParserException) as txt:
         if not os.environ.get ('PYMSGAUTH_TOLERATE_UNCONFIGURED'):
             log (FATAL, 'Fatal:  exception reading %s (%s)' % (config_file, txt))
             raise
-    if type (config['token_recipient']) != types.ListType:
+    if type (config['token_recipient']) != list:
         config['token_recipient'] = [config['token_recipient']]
     log (TRACE)
 
@@ -218,7 +217,7 @@ def extract_original_message (msg):
     while lines and string.strip (lines[0]) == '':
         del lines[0]
 
-    buf = cStringIO.StringIO (string.join (lines, ''))
+    buf = io.StringIO (string.join (lines, ''))
     buf.seek (0)
     orig_msg = rfc822.Message (buf)
     return orig_msg
@@ -235,7 +234,7 @@ def gen_token (msg):
     try:
         open (p, 'wb')
         log (TRACE, 'Recorded token %s.' % p)
-    except IOError, txt:
+    except IOError as txt:
         log (FATAL, 'Fatal:  exception creating %s (%s)' % (p, txt))
         raise
     return token
@@ -253,7 +252,7 @@ def check_token (msg, token):
         log (INFO, 'Matched token %s, removing.' % token)
         os.unlink (p)
         log (TRACE, 'Removed token %s.' % token)
-    except OSError, txt:
+    except OSError as txt:
         log (FATAL, 'Fatal:  error handling token %s (%s)' % (token, txt))
         log_exception ()
         # Exit 0 so qmail delivers the qsecretary notice to user
@@ -293,18 +292,18 @@ def send_mail (msgbuf, mailcmd):
                     errtext = ', err: "%s"' % err
                 else:
                     errtext = ''
-                raise DeliveryError, 'mail command %s exited %s, %s%s' \
-                    % (mailcmd, exitcode, exitsignal, errtext)
+                raise DeliveryError('mail command %s exited %s, %s%s' \
+                    % (mailcmd, exitcode, exitsignal, errtext))
             else:
                 exitcode = 127
-                raise DeliveryError, 'mail command %s did not exit (rc == %s)' \
-                    % (mailcmd, r)
+                raise DeliveryError('mail command %s did not exit (rc == %s)' \
+                    % (mailcmd, r))
 
         if err:
-            raise DeliveryError, 'mail command %s error: "%s"' % (mailcmd, err)
+            raise DeliveryError('mail command %s error: "%s"' % (mailcmd, err))
             exitcode = 1
 
-    except DeliveryError, txt:
+    except DeliveryError as txt:
         log (FATAL, 'Fatal:  failed sending mail (%s)' % txt)
         log_exception ()
         sys.exit (exitcode or 1)
@@ -337,12 +336,12 @@ def clean_old_tokens ():
                 if s[stat.ST_CTIME] < oldest:
                     log (INFO, 'Removing old token %s.' % filename)
                     os.unlink (p)
-            except OSError, txt:
+            except OSError as txt:
                 log (ERROR, 'Error:  error handling token %s (%s)'
                     % (filename, txt))
                 raise
 
-    except StandardError, txt:
+    except Exception as txt:
         log (FATAL, 'Fatal:  caught exception (%s)' % txt)
         log_exception ()
         sys.exit (1)
@@ -362,7 +361,7 @@ def sendmail_wrapper (args):
             mailcmd += config['extra_mail_args']
         mailcmd += args
         log (TRACE, 'mailcmd == %s' % mailcmd)
-        buf = cStringIO.StringIO (sys.stdin.read())
+        buf = io.StringIO (sys.stdin.read())
         new_buf = tokenize_message_if_needed (buf, args)
 
         send_mail (new_buf, mailcmd)
@@ -371,7 +370,7 @@ def sendmail_wrapper (args):
         else:
             log (TRACE, 'Passed mail through unchanged.')
 
-    except StandardError, txt:
+    except Exception as txt:
         log (FATAL, 'Fatal:  caught exception (%s)' % txt)
         log_exception ()
         sys.exit (1)
@@ -389,7 +388,7 @@ def should_tokenize_message (msg, *args):
             recips = []
             for field in ('to', 'cc', 'bcc', 'resent-to', 'resent-cc', 'resent-bcc'):
                 recips.extend (msg.getaddrlist (field))
-            recips = map (lambda (name, addr):  addr, recips)
+            recips = [name_addr[1] for name_addr in recips]
             for recip in recips:
                 if recip in config['token_recipient']:
                     sign_message = 1
@@ -397,7 +396,7 @@ def should_tokenize_message (msg, *args):
 
         return sign_message
 
-    except StandardError, txt:
+    except Exception as txt:
         log (FATAL, 'Fatal:  caught exception (%s)' % txt)
         log_exception ()
         sys.exit (1)
@@ -416,7 +415,7 @@ def tokenize_message_if_needed (buf, *args):
         else:
             return buf.getvalue ()
 
-    except StandardError, txt:
+    except Exception as txt:
         log (FATAL, 'Fatal:  caught exception (%s)' % txt)
         log_exception ()
         sys.exit (1)
@@ -426,7 +425,7 @@ def process_qsecretary_message ():
     try:
         read_config ()
         log (TRACE)
-        buf = cStringIO.StringIO (sys.stdin.read())
+        buf = io.StringIO (sys.stdin.read())
         msg = rfc822.Message (buf, seekable=1)
         from_name, from_addr = msg.getaddr ('from')
         if from_name != 'The qsecretary program':
@@ -439,7 +438,7 @@ def process_qsecretary_message ():
         confirm = 0
         domain = string.split (from_addr, '@')[-1]
         cdomains = config['confirm_domain']
-        if type (cdomains) != types.ListType:  cdomains = [cdomains]
+        if type (cdomains) != list:  cdomains = [cdomains]
         for cd in cdomains:
             if cd == domain:  confirm = 1
         if not confirm:
@@ -463,7 +462,7 @@ def process_qsecretary_message ():
                 try:
                     source_addr = config['confirmation_address']
                 except:
-                    raise ConfigurationError, 'no confirmation_address configured'
+                    raise ConfigurationError('no confirmation_address configured')
                 # Confirm this confirmation notice
                 #confirm_cmd = config['mail_prog'] \
                 #    + ' ' + '-f "%s" "%s"' % (source_addr, from_addr)
@@ -474,14 +473,14 @@ def process_qsecretary_message ():
                 log (INFO, 'Authenticated qsecretary notice, from "%s", token "%s"'
                     % (from_addr, orig_token))
                 sys.exit (99)
-            except ConfigurationError, txt:
+            except ConfigurationError as txt:
                 log (ERROR, 'Error:  failed sending confirmation notice (%s)'
                     % txt)
         else:
             log (ERROR, 'Error:  did not find matching token file (%s)'
                 % orig_token)
 
-    except StandardError, txt:
+    except Exception as txt:
         log (FATAL, 'Fatal:  caught exception (%s)' % txt)
         log_exception ()
 

@@ -2,8 +2,8 @@
 
 from pymsgauth import *
 
-import cStringIO
+import io
 import sys
 
-msg = tokenize_message_if_needed (cStringIO.StringIO (sys.stdin.read ()))
+msg = tokenize_message_if_needed (io.StringIO (sys.stdin.read ()))
 sys.stdout.write (msg)
