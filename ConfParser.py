@@ -41,7 +41,7 @@ This module is similar, except:
 I welcome questions and comments at <software @ discworld.dyndns.org>.
 '''
 
-__version__ = '3.1'
+__version__ = '3.1-filter3-XXX'
 __author__ = 'Charles Cazabon <software @ discworld.dyndns.org>'
 
 #
@@ -49,11 +49,14 @@ __author__ = 'Charles Cazabon <software @ discworld.dyndns.org>'
 #
 
 import string
-import UserDict
 import sys
 import shlex
 import io
 from types import *
+try:
+    from UserDict import UserDict
+except ImportError:
+    from collections import UserDict
 
 
 #
@@ -124,14 +127,14 @@ def log (msg):
 #
 
 #######################################
-class SmartDict (UserDict.UserDict):
+class SmartDict (UserDict):
     '''Dictionary class which handles lists and singletons intelligently.
     '''
     #######################################
     def __init__ (self, initialdata = {}):
         '''Constructor.
         '''
-        UserDict.UserDict.__init__ (self, {})
+        UserDict.__init__ (self, {})
         for (key, value) in list(initialdata.items ()):
             self.__setitem (key, value)
 
@@ -151,7 +154,7 @@ class SmartDict (UserDict.UserDict):
     def __setitem__ (self, key, value):
         '''
         '''
-        if type (value) in (ListType, TupleType):
+        if type (value) in (list, tuple):
             self.data[key] = list (value)
         else:
             self.data[key] = [value]
@@ -186,7 +189,7 @@ class ConfParser:
     def read (self, filelist):
         '''Read configuration file(s) from list of 1 or more filenames.
         '''
-        if type (filelist) not in (ListType, TupleType):
+        if type (filelist) not in (list, tuple):
             filelist = [filelist]
 
         try:
@@ -206,7 +209,7 @@ class ConfParser:
     def __parse (self):
         '''Parse the read-in configuration file.
         '''
-        config = string.join (self.__rawdata, '\n')
+        config = u'\n'.join (self.__rawdata)
         f = io.StringIO (config)
         lex = shlex.shlex (f)
         lex.wordchars = lex.wordchars + '|/.,$^\\():;@-+?<>!%&*`~'
@@ -237,7 +240,7 @@ class ConfParser:
 
                 section = SmartDict ()
                 # Collapse case on section names
-                section_name = string.lower (section_name)
+                section_name = section_name.lower ()
                 if section_name in self.__sectionlist:
                     raise DuplicateSectionError('duplicate section (%s)' % section_name)
                 section['__name__'] = section_name
@@ -273,7 +276,7 @@ class ConfParser:
                     option_value = option_value[1:-1]
                                   
                 if option_name in section:
-                    if type (section[option_name]) == ListType:
+                    if type (section[option_name]) == list:
                         section[option_name].append (option_value)
                     else:
                         section[option_name] = [section[option_name], option_value]
@@ -330,7 +333,7 @@ class ConfParser:
         '''Return list of options in section.
         '''
         try:
-            s = self.__sectionlist.index (string.lower (section))
+            s = self.__sectionlist.index (section.lower ())
 
         except ValueError:
             raise NoSectionError('missing section:  "%s"' % section)
@@ -346,7 +349,7 @@ class ConfParser:
         '''
 
         try:
-            s = self.__sectionlist.index (string.lower (section))
+            s = self.__sectionlist.index (section.lower ())
             options = self.__sections[s]
         except ValueError:
             raise NoSectionError('missing section (%s)' % section)
@@ -367,7 +370,7 @@ class ConfParser:
 
         try:
             value = []
-            if type (rawval) != ListType:
+            if type (rawval) != list:
                 rawval = [rawval]
             for part in rawval:
                 try:
@@ -431,11 +434,11 @@ class ConfParser:
             options.sort ()
             for option in options:
                 values = self.get (section, option)
-                if type (values) == ListType:
+                if type (values) == list:
                     sys.stderr.write ('    %s:\n' % option)
                     for value in values:
                         sys.stderr.write ('         %s\n' % value)
                 else:
                     sys.stderr.write ('    %s:  %s\n' % (option, values))
             sys.stderr.write ('\n')
-            
+
