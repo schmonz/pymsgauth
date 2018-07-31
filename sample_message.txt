@@ -1,0 +1,19 @@
+From: "Amitai Schleier" <schmonz@schmonz.com>
+To: qmail@list.cr.yp.to
+Subject: announce: queue-repair-symlink3 patch
+Date: Mon, 30 Jul 2018 09:09:23 +0200
+X-Mailer: MailMate (1.11.3r5509)
+Message-ID: <41B7E795-1B64-4D77-B8B1-6C74A71DF6C7@schmonz.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+
+This patch changes Charles Cazabon’s queue-repair
+(http://pyropus.ca/software/queue-repair/) in two ways:
+
+1. Run under Python 3 (and 2.7, but maybe not earlier versions anymore)
+2. Allow /var/qmail/queue to be a symbolic link
+
+https://schmonz.com/qmail/queuerepairsymlink3/
+
+If you don't want (2), find the "True" and change it to "False". :-)
