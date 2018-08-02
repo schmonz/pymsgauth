@@ -71,29 +71,29 @@ Content-Transfer-Encoding: 8bit
 
         blorf_name, blorf_addr = message.getaddr('blorf')
 
-        self.assertEquals(None, blorf_name)
-        self.assertEquals(None, blorf_addr)
+        self.assertEqual(None, blorf_name)
+        self.assertEqual(None, blorf_addr)
 
     def test_getaddr_on_non_address_header_still_parses(self):
         message = self.message('in')
 
         mailer_name, mailer_addr = message.getaddr('x-mailer')
 
-        self.assertEquals('1.11.3r5509', mailer_name)
-        self.assertEquals('MailMate', mailer_addr)
+        self.assertEqual('1.11.3r5509', mailer_name)
+        self.assertEqual('MailMate', mailer_addr)
 
         mimeversion_name, mimeversion_addr = message.getaddr('mime-version')
 
-        self.assertEquals('', mimeversion_name)
-        self.assertEquals('1.0', mimeversion_addr)
+        self.assertEqual('', mimeversion_name)
+        self.assertEqual('1.0', mimeversion_addr)
 
     def test_getaddr_on_sensible_header_gives_values(self):
         message = self.message('in')
 
         from_name, from_addr = message.getaddr('from')
 
-        self.assertEquals('Amitai Schleier', from_name)
-        self.assertEquals('schmonz@schmonz.com', from_addr)
+        self.assertEqual('Amitai Schleier', from_name)
+        self.assertEqual('schmonz@schmonz.com', from_addr)
 
     def test_getheader_on_missing_header_gives_empty(self):
         message = self.message('out')
@@ -101,7 +101,7 @@ Content-Transfer-Encoding: 8bit
 
         header = message.getheader(field, '')
 
-        self.assertEquals(0, len(header))
+        self.assertEqual(0, len(header))
         self.assertRegexpMatches(header, r'^$')
 
     def test_getheader_on_present_header_gives_value(self):
@@ -110,7 +110,7 @@ Content-Transfer-Encoding: 8bit
 
         header = message.getheader(field, '')
 
-        self.assertEquals(40, len(header))
+        self.assertEqual(40, len(header))
         self.assertRegexpMatches(header, r'[:xdigit:]+')
 
     def test_getaddrlist_makes_tuples(self):
