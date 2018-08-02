@@ -1,4 +1,4 @@
-#!/opt/pkg/bin/python2.7
+#!/opt/pkg/bin/python3.7
 
 import unittest
 
@@ -163,7 +163,7 @@ Content-Transfer-Encoding: 8bit
         header = self.message.getheader(field, '')
 
         self.assertEqual(0, len(header))
-        self.assertRegexpMatches(header, r'^$')
+        self.assertRegex(header, r'^$')
 
     def test_getheader_on_present_header_gives_value(self):
         self.message3('out')
@@ -172,7 +172,7 @@ Content-Transfer-Encoding: 8bit
         header = self.message.getheader(field, '')
 
         self.assertEqual(40, len(header))
-        self.assertRegexpMatches(header, r'[:xdigit:]+')
+        self.assertRegex(header, r'[:xdigit:]+')
 
     def test_getaddrlist_makes_tuples(self):
         self.message3('in')
