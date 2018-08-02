@@ -113,5 +113,28 @@ Content-Transfer-Encoding: 8bit
         self.assertEquals(40, len(header))
         self.assertRegexpMatches(header, r'[:xdigit:]+')
 
+    def test_getaddrlist_makes_tuples(self):
+        message = self.message('in')
+
+        recipients = []
+        self.assertEqual(0, len(recipients))
+
+        recipients.extend(message.getaddrlist('to'))
+        self.assertEqual(1, len(recipients))
+
+        name, addr = recipients[0]
+        self.assertEqual('', name)
+        self.assertEqual('qmail@list.cr.yp.to', addr)
+
+        recipients.extend(message.getaddrlist('cc'))
+        self.assertEqual(1, len(recipients))
+
+        recipients.extend(message.getaddrlist('from'))
+        self.assertEqual(2, len(recipients))
+
+        name, addr = recipients[1]
+        self.assertEqual('Amitai Schleier', name)
+        self.assertEqual('schmonz@schmonz.com', addr)
+
 if __name__ == '__main__':
     unittest.main()
