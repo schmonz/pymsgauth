@@ -308,7 +308,7 @@ def check_token (msg, token):
 def send_mail (msgbuf, mailcmd):
     import subprocess
     log (TRACE, 'Mail command is "%s".' % mailcmd)
-    cmd = subprocess.Popen (mailcmd, shell=True, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+    cmd = subprocess.Popen (mailcmd, shell=True, bufsize=-1, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     cmdout, cmdin, cmderr = cmd.stdout, cmd.stdin, cmd.stderr
 
     cmdin.write (msgbuf)
@@ -406,7 +406,7 @@ def sendmail_wrapper (args):
             mailcmd += config['extra_mail_args']
         mailcmd += args
         log (TRACE, 'mailcmd == %s' % mailcmd)
-        buf = io.StringIO (sys.stdin.read())
+        buf = io.StringIO (u'' + sys.stdin.read())
         new_buf = tokenize_message_if_needed (buf, args)
 
         send_mail (new_buf, mailcmd)
@@ -470,7 +470,7 @@ def process_qsecretary_message ():
     try:
         read_config ()
         log (TRACE)
-        buf = io.StringIO (sys.stdin.read())
+        buf = io.StringIO (u'' + sys.stdin.read())
         msg = RFC822Message (buf, seekable=1)
         from_name, from_addr = msg.getaddr ('from')
         if from_name != 'The qsecretary program':
