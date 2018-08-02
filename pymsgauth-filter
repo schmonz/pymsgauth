@@ -5,5 +5,5 @@ from pymsgauth import *
 import io
 import sys
 
-msg = tokenize_message_if_needed (io.StringIO (sys.stdin.read ()))
+msg = tokenize_message_if_needed (io.BytesIO (sys.stdin.read ()))
 sys.stdout.write (msg)

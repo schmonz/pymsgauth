@@ -36,6 +36,9 @@ import time
 import types
 import ConfParser
 
+sys.stdin = os.fdopen(sys.stdin.fileno(), 'rb', 0)
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'wb', 0)
+
 #
 # Configuration constants
 #
@@ -145,7 +148,7 @@ class RFC822Message:
             buf.seek(0)
             while 1:
                 line = buf.readline()
-                if line == '\n' or line == '':
+                if line == b'\n' or line == b'':
                     break
         return buf
 
@@ -263,7 +266,7 @@ def extract_original_message (msg):
     while lines and string.strip (lines[0]) == '':
         del lines[0]
 
-    buf = io.StringIO (string.join (lines, ''))
+    buf = io.BytesIO (string.join (lines, b''))
     buf.seek (0)
     orig_msg = RFC822Message (buf)
     return orig_msg
@@ -307,19 +310,19 @@ def check_token (msg, token):
 
 #############################
 def send_mail (msgbuf, mailcmd):
-    import popen2
-    popen2._cleanup()
+    import subprocess
     log (TRACE, 'Mail command is "%s".' % mailcmd)
-    cmd = popen2.Popen3 (mailcmd, 1, bufsize=-1)
-    cmdout, cmdin, cmderr = cmd.fromchild, cmd.tochild, cmd.childerr
+    cmd = subprocess.Popen (mailcmd, shell=True, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+    cmdout, cmdin, cmderr = cmd.stdout, cmd.stdin, cmd.stderr
+
     cmdin.write (msgbuf)
     cmdin.flush ()
     cmdin.close ()
     log (TRACE)
 
-    err = string.strip (cmderr.read ())
+    err = cmderr.read ().strip ()
     cmderr.close ()
-    out = string.strip (cmdout.read ())
+    out = cmdout.read ().strip ()
     cmdout.close ()
 
     r = cmd.wait ()
@@ -407,7 +410,7 @@ def sendmail_wrapper (args):
             mailcmd += config['extra_mail_args']
         mailcmd += args
         log (TRACE, 'mailcmd == %s' % mailcmd)
-        buf = io.StringIO (sys.stdin.read())
+        buf = io.BytesIO (sys.stdin.read())
         new_buf = tokenize_message_if_needed (buf, args)
 
         send_mail (new_buf, mailcmd)
@@ -457,7 +460,7 @@ def tokenize_message_if_needed (buf, *args):
         if should_tokenize_message (msg, args):
             token = gen_token (msg)
             log (INFO, 'Generated token %s.' % token)
-            return '%s: %s\n' % (config['auth_field'], token) + buf.getvalue ()
+            return b'%s: %s\n' % (config['auth_field'], token) + buf.getvalue ()
         else:
             return buf.getvalue ()
 
@@ -471,7 +474,7 @@ def process_qsecretary_message ():
     try:
         read_config ()
         log (TRACE)
-        buf = io.StringIO (sys.stdin.read())
+        buf = io.BytesIO (sys.stdin.read())
         msg = RFC822Message (buf, seekable=1)
         from_name, from_addr = msg.getaddr ('from')
         if from_name != 'The qsecretary program':
