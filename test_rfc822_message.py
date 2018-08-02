@@ -15,6 +15,24 @@ class TestRFC822Message(unittest.TestCase):
         f = open('sample_message_' + which + '.txt', 'r')
         return rfc822.Message(f)
 
+    def test_headers_preserves_order(self):
+        message = self.message('in')
+
+        expected_headers_in_order = """From: "Amitai Schleier" <schmonz@schmonz.com>
+To: qmail@list.cr.yp.to
+Subject: announce: queue-repair-symlink3 patch
+Date: Mon, 30 Jul 2018 09:09:23 +0200
+X-Mailer: MailMate (1.11.3r5509)
+Message-ID: <41B7E795-1B64-4D77-B8B1-6C74A71DF6C7@schmonz.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+"""
+        actual_headers = message.headers
+
+        self.assertIsInstance(actual_headers, list)
+        self.assertEqual(expected_headers_in_order, ''.join(message.headers))
+
     def test_readline_fp_reads_line(self):
         message = rfc822.Message(buf)
 
