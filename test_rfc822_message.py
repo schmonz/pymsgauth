@@ -11,50 +11,89 @@ sys.stdin = codecs.getreader('utf-8')(sys.stdin)
 buf = io.StringIO (u'' + sys.stdin.read())
 
 class TestRFC822Message(unittest.TestCase):
-    def test_can_readline_fp(self):
+    def message(self, which):
+        f = open('sample_message_' + which + '.txt', 'r')
+        return rfc822.Message(f)
+
+    def test_readline_fp_reads_line(self):
         message = rfc822.Message(buf)
 
-        self.assertTrue(message.fp.readline().startswith('This patch '))
-        self.assertTrue(message.fp.readline().startswith('(http://pyropus.ca'))
-        self.assertEqual(u"\n", message.fp.readline())
+        line1 = message.fp.readline()
+        line2 = message.fp.readline()
+        line3 = message.fp.readline()
 
-    def test_cannot_rewindbody_stdin(self):
+        self.assertTrue(line1.startswith('This patch '))
+        self.assertTrue(line2.startswith('(http://pyropus.ca'))
+        self.assertEqual(u"\n", line3)
+
+    def test_rewindbody_on_stdin_does_not_rewind(self):
         message = rfc822.Message(buf)
-        message.fp.readline()
-        message.fp.readline()
-        message.fp.readline()
-        message.rewindbody()
-
-        self.assertFalse(message.fp.readline().startswith('This patch '))
-
-    def test_can_rewindbody_file(self):
-        f = open('sample_message_in.txt', 'r')
-        message = rfc822.Message(f)
 
         message.fp.readline()
         message.fp.readline()
         message.fp.readline()
         message.rewindbody()
+        current_line = message.fp.readline()
 
-        self.assertTrue(message.fp.readline().startswith('This patch '))
+        self.assertFalse(current_line.startswith('This patch '))
 
-    def test_can_getaddr(self):
-        message = rfc822.Message(buf)
+    def test_rewindbody_on_file_rewinds(self):
+        message = self.message('in')
+
+        message.fp.readline()
+        message.fp.readline()
+        message.fp.readline()
+        message.rewindbody()
+        current_line = message.fp.readline()
+
+        self.assertTrue(current_line.startswith('This patch '))
+
+    def test_getaddr_on_missing_header_gives_none(self):
+        message = self.message('in')
+
+        blorf_name, blorf_addr = message.getaddr('blorf')
+
+        self.assertEquals(None, blorf_name)
+        self.assertEquals(None, blorf_addr)
+
+    def test_getaddr_on_non_address_header_still_parses(self):
+        message = self.message('in')
+
+        mailer_name, mailer_addr = message.getaddr('x-mailer')
+
+        self.assertEquals('1.11.3r5509', mailer_name)
+        self.assertEquals('MailMate', mailer_addr)
+
+        mimeversion_name, mimeversion_addr = message.getaddr('mime-version')
+
+        self.assertEquals('', mimeversion_name)
+        self.assertEquals('1.0', mimeversion_addr)
+
+    def test_getaddr_on_sensible_header_gives_values(self):
+        message = self.message('in')
 
         from_name, from_addr = message.getaddr('from')
 
         self.assertEquals('Amitai Schleier', from_name)
         self.assertEquals('schmonz@schmonz.com', from_addr)
 
-    def test_can_getheader(self):
-        f = open('sample_message_out.txt', 'r')
-        message = rfc822.Message(f)
-        auth_field = 'X-pymsgauth-token'
+    def test_getheader_on_missing_header_gives_empty(self):
+        message = self.message('out')
+        field = 'X-totally-invented-for-this-test'
 
-        header = message.getheader(auth_field)
+        header = message.getheader(field, '')
+
+        self.assertEquals(0, len(header))
+        self.assertRegexpMatches(header, r'^$')
+
+    def test_getheader_on_present_header_gives_value(self):
+        message = self.message('out')
+        field = 'X-pymsgauth-token'
+
+        header = message.getheader(field, '')
 
         self.assertEquals(40, len(header))
-        self.assertRegexpMatches(header, '[:xdigit:]')
+        self.assertRegexpMatches(header, r'[:xdigit:]+')
 
 if __name__ == '__main__':
     unittest.main()
