@@ -1,5 +1,6 @@
 X-pymsgauth-token: 7a08f934bd27cb376958ca060ebb69e3080187d0
 From: "Amitai Schleier" <schmonz@schmonz.com>
+Cc: archive@schmonz.com (Archive Schmonz)
 To: qmail@list.cr.yp.to
 Subject: announce: queue-repair-symlink3 patch
 Date: Mon, 30 Jul 2018 09:09:23 +0200

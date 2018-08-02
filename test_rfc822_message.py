@@ -39,6 +39,7 @@ class TestRFC822Message(unittest.TestCase):
         message = self.message3('in')
 
         expected_headers_in_order = """From: "Amitai Schleier" <schmonz@schmonz.com>
+Cc: archive@schmonz.com (Archive Schmonz)
 To: qmail@list.cr.yp.to
 Subject: announce: queue-repair-symlink3 patch
 Date: Mon, 30 Jul 2018 09:09:23 +0200
@@ -115,6 +116,14 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual('Amitai Schleier', from_name)
         self.assertEqual('schmonz@schmonz.com', from_addr)
 
+    def test_getaddr_on_also_sensible_header_gives_values(self):
+        message = self.message3('in')
+
+        from_name, from_addr = message.getaddr('cc')
+
+        self.assertEqual('Archive Schmonz', from_name)
+        self.assertEqual('archive@schmonz.com', from_addr)
+
     def test_getheader_on_missing_header_gives_empty(self):
         message = self.message3('out')
         field = 'X-totally-invented-for-this-test'
@@ -146,7 +155,7 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual('', name)
         self.assertEqual('qmail@list.cr.yp.to', addr)
 
-        recipients.extend(message.getaddrlist('cc'))
+        recipients.extend(message.getaddrlist('blorf'))
         self.assertEqual(1, len(recipients))
 
         recipients.extend(message.getaddrlist('from'))
