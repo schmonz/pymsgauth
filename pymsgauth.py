@@ -30,7 +30,7 @@ __author__ = 'Charles Cazabon <software @ discworld.dyndns.org>'
 import sys
 import os
 import string
-import rfc822
+import email
 import io
 import time
 import types
@@ -127,6 +127,52 @@ class DeliveryError (pymsgauthError):
 class ConfigurationError (pymsgauthError):
     pass
 
+#############################
+class RFC822Message:
+    def __init__(self, buf, seekable=1):
+        self.message = email.message_from_file(buf)
+        self.headers = self.init_headers()
+        self.fp = self.init_fp(buf)
+
+    def init_headers(self):
+        headers = []
+        for field, value in self.message.items():
+            headers.extend(field + ': ' + value + '\n')
+        return headers
+
+    def init_fp(self, buf):
+        if buf != sys.stdin:
+            buf.seek(0)
+            while 1:
+                line = buf.readline()
+                if line == '\n' or line == '':
+                    break
+        return buf
+
+    def getaddr(self, field):
+        value = self.message.get(field)
+        if value == None:
+            name = None
+            addr = None
+        else:
+            name, addr = email.utils.parseaddr(value)
+        return name, addr
+
+    def getheader(self, field, default):
+        return self.message.get(field, '')
+
+    def getaddrlist(self, field):
+        addrlist = []
+        values = self.message.get_all(field)
+        if values:
+            for value in values:
+                name_addr = email.utils.parseaddr(value)
+                addrlist.append(name_addr)
+        return addrlist
+
+    def rewindbody(self):
+        self.init_fp(self.fp)
+
 #######################################
 def log (level=INFO, msg=''):
     global logfd
@@ -219,7 +265,7 @@ def extract_original_message (msg):
 
     buf = io.StringIO (string.join (lines, ''))
     buf.seek (0)
-    orig_msg = rfc822.Message (buf)
+    orig_msg = RFC822Message (buf)
     return orig_msg
 
 #############################
@@ -406,7 +452,7 @@ def tokenize_message_if_needed (buf, *args):
     try:
         read_config ()
         log (TRACE)
-        msg = rfc822.Message (buf, seekable=1)
+        msg = RFC822Message (buf, seekable=1)
 
         if should_tokenize_message (msg, args):
             token = gen_token (msg)
@@ -426,7 +472,7 @@ def process_qsecretary_message ():
         read_config ()
         log (TRACE)
         buf = io.StringIO (sys.stdin.read())
-        msg = rfc822.Message (buf, seekable=1)
+        msg = RFC822Message (buf, seekable=1)
         from_name, from_addr = msg.getaddr ('from')
         if from_name != 'The qsecretary program':
             # Not a confirmation message, just quit

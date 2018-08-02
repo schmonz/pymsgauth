@@ -3,53 +3,10 @@
 import unittest
 
 import codecs
-import email
 import os
 import sys
 
-
-class RFC822Message:
-    def __init__(self, buf):
-        self.message = email.message_from_file(buf)
-        self.headers = self.init_headers()
-        self.fp = self.init_fp(buf)
-
-    def init_headers(self):
-        headers = []
-        for field, value in self.message.items():
-            headers.extend(field + ': ' + value + '\n')
-        return headers
-
-    def init_fp(self, buf):
-        if buf != sys.stdin:
-            buf.seek(0)
-            while '\n' != buf.readline():
-                pass
-        return buf
-
-    def getaddr(self, field):
-        value = self.message.get(field)
-        if value == None:
-            name = None
-            addr = None
-        else:
-            name, addr = email.utils.parseaddr(value)
-        return name, addr
-
-    def getheader(self, field, default):
-        return self.message.get(field, '')
-
-    def getaddrlist(self, field):
-        addrlist = []
-        values = self.message.get_all(field)
-        if values:
-            for value in values:
-                name_addr = email.utils.parseaddr(value)
-                addrlist.append(name_addr)
-        return addrlist
-
-    def rewindbody(self):
-        self.init_fp(self.fp)
+from pymsgauth import RFC822Message
 
 
 class TestRFC822Message(unittest.TestCase):
