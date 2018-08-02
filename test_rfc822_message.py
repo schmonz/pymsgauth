@@ -3,31 +3,53 @@
 import unittest
 
 import codecs
-import io
-import rfc822
+import email
 import sys
-
-sys.stdin = codecs.getreader('utf-8')(sys.stdin)
-buf = io.StringIO (u'' + sys.stdin.read())
 
 
 class RFC822Message:
     def __init__(self, buf):
-        self.message = rfc822.Message(buf)
-        self.headers = self.message.headers
-        self.fp = self.message.fp
+        self.message = email.message_from_file(buf)
+        self.headers = self.init_headers()
+        self.fp = self.init_fp(buf)
+
+    def init_headers(self):
+        headers = []
+        for field, value in self.message.items():
+            headers.extend(field + ': ' + value + '\n')
+        return headers
+
+    def init_fp(self, buf):
+        if buf != sys.stdin:
+            buf.seek(0)
+            while '\n' != buf.readline():
+                pass
+        return buf
 
     def getaddr(self, field):
-        return self.message.getaddr(field)
+        value = self.message.get(field)
+        if value == None:
+            name = None
+            addr = None
+        else:
+            name, addr = email.utils.parseaddr(value)
+        return name, addr
 
     def getheader(self, field, default):
-        return self.message.getheader(field, default)
+        return self.message.get(field, '')
 
     def getaddrlist(self, field):
-        return self.message.getaddrlist(field)
+        addrlist = []
+        values = self.message.get_all(field)
+        if values:
+            for value in values:
+                name_addr = email.utils.parseaddr(value)
+                addrlist.append(name_addr)
+        return addrlist
 
     def rewindbody(self):
-        self.message.rewindbody()
+        if self.fp != sys.stdin:
+            self.init_fp(self.fp)
 
 
 class TestRFC822Message(unittest.TestCase):
@@ -55,7 +77,7 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual(expected_headers_in_order, ''.join(message.headers))
 
     def test_readline_fp_reads_line(self):
-        message = RFC822Message(buf)
+        message = self.message3('in')
 
         line1 = message.fp.readline()
         line2 = message.fp.readline()
@@ -66,7 +88,8 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual(u"\n", line3)
 
     def test_rewindbody_on_stdin_does_not_rewind(self):
-        message = RFC822Message(buf)
+        sys.stdin = codecs.getreader('utf-8')(sys.stdin)
+        message = RFC822Message(sys.stdin)
 
         message.fp.readline()
         message.fp.readline()
