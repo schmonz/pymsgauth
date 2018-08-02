@@ -10,10 +10,33 @@ import sys
 sys.stdin = codecs.getreader('utf-8')(sys.stdin)
 buf = io.StringIO (u'' + sys.stdin.read())
 
+
+class RFC822Message:
+    def __init__(self, buf):
+        self.message = rfc822.Message(buf)
+
+    # XXX 'headers' is a property, not a method
+    # XXX 'fp' is a property, not a method
+    # XXX 'rewindbody' works on fp, probably
+
+    def getaddr(self, field):
+        return self.message.getaddr(field)
+
+    def getheader(self, field, default):
+        return self.message.getheader(field, default)
+
+    def getaddrlist(self, field):
+        return self.message.getaddrlist(field)
+
+
 class TestRFC822Message(unittest.TestCase):
     def message(self, which):
         f = open('sample_message_' + which + '.txt', 'r')
         return rfc822.Message(f)
+
+    def message3(self, which):
+        f = open('sample_message_' + which + '.txt', 'r')
+        return RFC822Message(f)
 
     def test_headers_preserves_order(self):
         message = self.message('in')
@@ -67,7 +90,7 @@ Content-Transfer-Encoding: 8bit
         self.assertTrue(current_line.startswith('This patch '))
 
     def test_getaddr_on_missing_header_gives_none(self):
-        message = self.message('in')
+        message = self.message3('in')
 
         blorf_name, blorf_addr = message.getaddr('blorf')
 
@@ -75,7 +98,7 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual(None, blorf_addr)
 
     def test_getaddr_on_non_address_header_still_parses(self):
-        message = self.message('in')
+        message = self.message3('in')
 
         mailer_name, mailer_addr = message.getaddr('x-mailer')
 
@@ -88,7 +111,7 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual('1.0', mimeversion_addr)
 
     def test_getaddr_on_sensible_header_gives_values(self):
-        message = self.message('in')
+        message = self.message3('in')
 
         from_name, from_addr = message.getaddr('from')
 
@@ -96,7 +119,7 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual('schmonz@schmonz.com', from_addr)
 
     def test_getheader_on_missing_header_gives_empty(self):
-        message = self.message('out')
+        message = self.message3('out')
         field = 'X-totally-invented-for-this-test'
 
         header = message.getheader(field, '')
@@ -105,7 +128,7 @@ Content-Transfer-Encoding: 8bit
         self.assertRegexpMatches(header, r'^$')
 
     def test_getheader_on_present_header_gives_value(self):
-        message = self.message('out')
+        message = self.message3('out')
         field = 'X-pymsgauth-token'
 
         header = message.getheader(field, '')
@@ -114,7 +137,7 @@ Content-Transfer-Encoding: 8bit
         self.assertRegexpMatches(header, r'[:xdigit:]+')
 
     def test_getaddrlist_makes_tuples(self):
-        message = self.message('in')
+        message = self.message3('in')
 
         recipients = []
         self.assertEqual(0, len(recipients))
