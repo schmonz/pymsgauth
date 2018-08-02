@@ -36,9 +36,6 @@ import time
 import types
 import ConfParser
 
-sys.stdin = os.fdopen(sys.stdin.fileno(), 'rb', 0)
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'wb', 0)
-
 #
 # Configuration constants
 #
@@ -148,7 +145,7 @@ class RFC822Message:
             buf.seek(0)
             while 1:
                 line = buf.readline()
-                if line == b'\n' or line == b'':
+                if line == '\n' or line == '':
                     break
         return buf
 
@@ -266,18 +263,17 @@ def extract_original_message (msg):
     while lines and string.strip (lines[0]) == '':
         del lines[0]
 
-    buf = io.BytesIO (string.join (lines, b''))
+    buf = io.StringIO (''.join (lines))
     buf.seek (0)
     orig_msg = RFC822Message (buf)
     return orig_msg
 
 #############################
 def gen_token (msg):
-    import sha
+    import hashlib
     lines = []
-    token = sha.new('%s,%s,%s,%s'
-        % (os.getpid(), time.time(), string.join (msg.headers),
-            config['secret'])).hexdigest()
+    contents = '%s,%s,%s,%s' % (os.getpid(), time.time(), ''.join (msg.headers), config['secret'])
+    token = hashlib.sha1(contents.encode('utf-8')).hexdigest()
     # Record token
     p = os.path.join (config['pymsgauth_dir'], '.%s' % token)
     try:
@@ -410,7 +406,7 @@ def sendmail_wrapper (args):
             mailcmd += config['extra_mail_args']
         mailcmd += args
         log (TRACE, 'mailcmd == %s' % mailcmd)
-        buf = io.BytesIO (sys.stdin.read())
+        buf = io.StringIO (sys.stdin.read())
         new_buf = tokenize_message_if_needed (buf, args)
 
         send_mail (new_buf, mailcmd)
@@ -460,7 +456,7 @@ def tokenize_message_if_needed (buf, *args):
         if should_tokenize_message (msg, args):
             token = gen_token (msg)
             log (INFO, 'Generated token %s.' % token)
-            return b'%s: %s\n' % (config['auth_field'], token) + buf.getvalue ()
+            return '%s: %s\n' % (config['auth_field'], token) + buf.getvalue ()
         else:
             return buf.getvalue ()
 
@@ -474,7 +470,7 @@ def process_qsecretary_message ():
     try:
         read_config ()
         log (TRACE)
-        buf = io.BytesIO (sys.stdin.read())
+        buf = io.StringIO (sys.stdin.read())
         msg = RFC822Message (buf, seekable=1)
         from_name, from_addr = msg.getaddr ('from')
         if from_name != 'The qsecretary program':
