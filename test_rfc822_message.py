@@ -28,7 +28,7 @@ class TestRFC822Message(unittest.TestCase):
         self.assertFalse(message.fp.readline().startswith('This patch '))
 
     def test_can_rewindbody_file(self):
-        f = open('sample_message.txt', 'r')
+        f = open('sample_message_in.txt', 'r')
         message = rfc822.Message(f)
 
         message.fp.readline()
@@ -37,6 +37,24 @@ class TestRFC822Message(unittest.TestCase):
         message.rewindbody()
 
         self.assertTrue(message.fp.readline().startswith('This patch '))
+
+    def test_can_getaddr(self):
+        message = rfc822.Message(buf)
+
+        from_name, from_addr = message.getaddr('from')
+
+        self.assertEquals('Amitai Schleier', from_name)
+        self.assertEquals('schmonz@schmonz.com', from_addr)
+
+    def test_can_getheader(self):
+        f = open('sample_message_out.txt', 'r')
+        message = rfc822.Message(f)
+        auth_field = 'X-pymsgauth-token'
+
+        header = message.getheader(auth_field)
+
+        self.assertEquals(40, len(header))
+        self.assertRegexpMatches(header, '[:xdigit:]')
 
 if __name__ == '__main__':
     unittest.main()
