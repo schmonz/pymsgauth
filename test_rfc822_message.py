@@ -15,9 +15,7 @@ class RFC822Message:
     def __init__(self, buf):
         self.message = rfc822.Message(buf)
         self.headers = self.message.headers
-
-    # XXX 'fp' is a property, not a method
-    # XXX 'rewindbody' works on fp, probably
+        self.fp = self.message.fp
 
     def getaddr(self, field):
         return self.message.getaddr(field)
@@ -28,12 +26,11 @@ class RFC822Message:
     def getaddrlist(self, field):
         return self.message.getaddrlist(field)
 
+    def rewindbody(self):
+        self.message.rewindbody()
+
 
 class TestRFC822Message(unittest.TestCase):
-    def message(self, which):
-        f = open('sample_message_' + which + '.txt', 'r')
-        return rfc822.Message(f)
-
     def message3(self, which):
         f = open('sample_message_' + which + '.txt', 'r')
         return RFC822Message(f)
@@ -57,7 +54,7 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual(expected_headers_in_order, ''.join(message.headers))
 
     def test_readline_fp_reads_line(self):
-        message = rfc822.Message(buf)
+        message = RFC822Message(buf)
 
         line1 = message.fp.readline()
         line2 = message.fp.readline()
@@ -68,7 +65,7 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual(u"\n", line3)
 
     def test_rewindbody_on_stdin_does_not_rewind(self):
-        message = rfc822.Message(buf)
+        message = RFC822Message(buf)
 
         message.fp.readline()
         message.fp.readline()
@@ -79,7 +76,7 @@ Content-Transfer-Encoding: 8bit
         self.assertFalse(current_line.startswith('This patch '))
 
     def test_rewindbody_on_file_rewinds(self):
-        message = self.message('in')
+        message = self.message3('in')
 
         message.fp.readline()
         message.fp.readline()
