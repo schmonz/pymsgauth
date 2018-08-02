@@ -14,8 +14,8 @@ buf = io.StringIO (u'' + sys.stdin.read())
 class RFC822Message:
     def __init__(self, buf):
         self.message = rfc822.Message(buf)
+        self.headers = self.message.headers
 
-    # XXX 'headers' is a property, not a method
     # XXX 'fp' is a property, not a method
     # XXX 'rewindbody' works on fp, probably
 
@@ -39,7 +39,7 @@ class TestRFC822Message(unittest.TestCase):
         return RFC822Message(f)
 
     def test_headers_preserves_order(self):
-        message = self.message('in')
+        message = self.message3('in')
 
         expected_headers_in_order = """From: "Amitai Schleier" <schmonz@schmonz.com>
 To: qmail@list.cr.yp.to
