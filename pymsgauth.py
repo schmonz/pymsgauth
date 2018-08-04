@@ -36,6 +36,10 @@ import time
 import types
 import ConfParser
 
+if sys.version_info[0] < 3:
+    import codecs
+    sys.stdin = codecs.getreader('utf-8')(sys.stdin)
+
 #
 # Configuration constants
 #
