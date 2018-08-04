@@ -41,7 +41,7 @@ This module is similar, except:
 I welcome questions and comments at <software @ discworld.dyndns.org>.
 '''
 
-__version__ = '3.1-filter3-XXX'
+__version__ = '3.1-filter3-20180804'
 __author__ = 'Charles Cazabon <software @ discworld.dyndns.org>'
 
 #
