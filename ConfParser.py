@@ -308,7 +308,7 @@ class ConfParser:
         '''Indicates whether the named section is present in the configuration. 
         The default section is not acknowledged.
         '''
-        section = string.lower (section)
+        section = section.lower ()
         if section not in self.sections ():
             return 0
         return 1

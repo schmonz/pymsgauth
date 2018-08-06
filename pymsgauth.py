@@ -264,7 +264,7 @@ def extract_original_message (msg):
         del lines[0]
 
     # Strip blank line(s)
-    while lines and string.strip (lines[0]) == '':
+    while lines and lines[0].strip () == '':
         del lines[0]
 
     buf = io.StringIO (''.join (lines))
@@ -485,7 +485,7 @@ def process_qsecretary_message ():
 
         # Verify the message came from a domain we recognize
         confirm = 0
-        domain = string.split (from_addr, '@')[-1]
+        domain = from_addr.split ('@')[-1]
         cdomains = config['confirm_domain']
         if type (cdomains) != list:  cdomains = [cdomains]
         for cd in cdomains:
@@ -498,7 +498,8 @@ def process_qsecretary_message ():
 
         # check message here
         orig_msg = extract_original_message (msg)
-        orig_token = string.strip (orig_msg.getheader (config['auth_field'], ''))
+        orig_header = orig_msg.getheader (config['auth_field'], '')
+        orig_token = orig_header.strip ()
         if orig_token:
             log (TRACE, 'Received qsecretary notice with token %s.'
                 % orig_token)
